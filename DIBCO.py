@@ -1,9 +1,10 @@
-from torch.utils.data import Dataset
-import os
-import numpy as np
 import glob
+import os
+from typing import Any, Callable, Optional, Tuple
+
+import numpy as np
 from PIL import Image, ImageOps
-from typing import Callable, Any, Optional, Tuple
+from torch.utils.data import Dataset
 
 
 class DIBCO(Dataset):
@@ -32,8 +33,7 @@ class DIBCO(Dataset):
 
         # Apply data augmentation.
         if self.transform is not None:
-            img = self.transform(img)
-            gt = self.transform(gt)
+            img, gt = self.transform(np.asarray(img), np.asarray(gt))
 
         #  dataset_dict = {}
         #  dataset_dict['img'] = img

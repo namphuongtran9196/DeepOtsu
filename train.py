@@ -1,14 +1,17 @@
 import copy
 
+#  import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from criterion import HeScho
-from DIBCO import DIBCO
 from torch import nn
 from torch.optim import lr_scheduler
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
-from torchvision import transforms
+
+from criterion import HeScho
+from DIBCO import DIBCO
+from transform import (Compose, Normalize, RandomCrop, RandomRotation,
+                       RandomScale, ToTensor)
 from unet import DeepOtsu
 
 
@@ -18,19 +21,25 @@ def main():
 
     data_transforms = {
         'train':
-        transforms.Compose([
-            transforms.RandomResizedCrop(128),
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomRotation(270),
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        Compose([
+            RandomScale(.75, 1.5, .25),
+            RandomCrop(256, 256,
+                       tuple([int(v * 255) for v in [0.485, 0.456, 0.406]]),
+                       tuple([int(v * 255) for v in [0.485, 0.456, 0.406]]),
+                       True),
+            RandomRotation(270),
+            ToTensor(),
+            Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ]),
         'val':
-        transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(128),
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        Compose([
+            RandomScale(1, 1, 0),
+            RandomCrop(256, 256,
+                       tuple([int(v * 255) for v in [0.485, 0.456, 0.406]]),
+                       tuple([int(v * 255) for v in [0.485, 0.456, 0.406]]),
+                       False),
+            ToTensor(),
+            Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ]),
     }
 
@@ -45,7 +54,7 @@ def main():
 
     n_epochs = 100
     lr = 0.01
-    batch_size = 16
+    batch_size = 1
     validation_split = .2
     shuffle_dataset = True
     random_seed = 42
@@ -88,6 +97,10 @@ def main():
             n_total_steps = len(loader)
 
             for i, (img, gt) in enumerate(loader):
+                #  f, axarr = plt.subplots(1, 2)
+                #  axarr[0].imshow(img[0].permute(1, 2, 0))
+                #  axarr[1].imshow(gt[0].permute(1, 2, 0))
+                #  plt.show()
                 img = img.to(device)
                 gt = gt.to(device)
 
@@ -125,5 +138,4 @@ def main():
                 torch.save(model.state_dict(), './weight.pth')
 
 
-if __name__ == "__main__":
-    main()
+main()
