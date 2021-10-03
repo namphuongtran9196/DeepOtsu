@@ -1,0 +1,22 @@
+certifi==2021.5.30
+cffi @ file:///Users/runner/miniforge3/conda-bld/cffi_1625835350093/work
+cycler==0.10.0
+future @ file:///Users/ktietz/Code/oss/ci_pkgs/future_1626786552456/work
+kiwisolver @ file:///Users/ktietz/demo/mc3/conda-bld/kiwisolver_1628942354602/work
+matplotlib @ file:///Users/ktietz/demo/mc3/conda-bld/matplotlib-suite_1629898003929/work
+numpy==1.21.2
+olefile @ file:///Users/ktietz/demo/mc3/conda-bld/olefile_1629805411829/work
+opencv-python==4.5.3.56
+packaging @ file:///tmp/build/80754af9/packaging_1625611678980/work
+Pillow @ file:///Users/ktietz/demo/mc3/conda-bld/pillow_1628860154764/work
+pycparser @ file:///tmp/build/80754af9/pycparser_1594388511720/work
+pyparsing @ file:///home/linux1/recipes/ci/pyparsing_1610983426697/work
+python-dateutil @ file:///tmp/build/80754af9/python-dateutil_1626374649649/work
+six @ file:///tmp/build/80754af9/six_1623709665295/work
+torch @ file:///Users/runner/miniforge3/conda-bld/pytorch-recipe_1629200768039/work
+torchinfo @ file:///home/conda/feedstock_root/build_artifacts/torchinfo_1630433095579/work
+torchmetrics @ file:///home/conda/feedstock_root/build_artifacts/torchmetrics_1630576593307/work
+torchvision @ file:///Users/runner/miniforge3/conda-bld/torchvision-split_1632782985591/work
+tornado @ file:///Users/ktietz/demo/mc3/conda-bld/tornado_1628698929452/work
+tqdm @ file:///tmp/build/80754af9/tqdm_1631818572807/work
+typing-extensions @ file:///tmp/build/80754af9/typing_extensions_1631814937681/work
