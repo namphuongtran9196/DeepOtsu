@@ -80,6 +80,10 @@ def main():
     scheduler = lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
     dataloaders = {'train': train_loader, 'val': validation_loader}
 
+    best_model = copy.deepcopy(model.state_dict())
+    best_acc = 0.0
+    val_acc_history = []
+
     # Training loop
     for epoch in range(n_epochs):
         print('Epoch {}/{}'.format(epoch + 1, n_epochs))
@@ -134,8 +138,14 @@ def main():
             # deep copy the model
             if phase == 'val' and epoch_acc > best_acc:
                 best_acc = epoch_acc
-                best_model_weights = copy.deepcopy(model.state_dict())
-                torch.save(model.state_dict(), './weight.pth')
+                best_model = copy.deepcopy(model.state_dict())
+            if phase == 'val':
+                val_acc_history.append(epoch_acc)
+
+    print('Best val Acc: {:4f}'.format(best_acc))
+
+    model.load_state_dict(best_model)
 
 
-main()
+if __name__ == "__main__":
+    main()
