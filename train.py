@@ -49,6 +49,7 @@ def main():
     }
 
     model = DeepOtsu(3)
+    model.to(device)
 
     criterion = HeScho()
 
