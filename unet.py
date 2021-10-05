@@ -144,11 +144,13 @@ class DeepOtsu(nn.Module):
 
     def forward(self, x):
         input = x
+        outputs = []
         for _ in range(self.num_block):
             output = self.block(input)
             output = torch.add(input, output)
+            outputs.append(output)
             input = output
-        return output
+        return outputs
 
 
 def crop_tensor(target_tensor, tensor):
