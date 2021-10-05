@@ -1,11 +1,7 @@
-import copy
 import logging
 
-#  import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from torch import nn
-from torch.optim import lr_scheduler
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 
@@ -60,7 +56,6 @@ def main():
     criterion = HeScho()
 
     n_epochs = 1000
-    lr = 0.01
     batch_size = 4
     validation_split = .2
     shuffle_dataset = True
@@ -84,7 +79,6 @@ def main():
                                    sampler=valid_sampler)
 
     optimizer = torch.optim.Adam(model.parameters())
-    #     scheduler = lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
     dataloaders = {'train': train_loader, 'val': validation_loader}
 
     best_acc = 0.0
@@ -94,8 +88,6 @@ def main():
 
     # Training loop
     for epoch in range(n_epochs):
-        print('Epoch {}/{}'.format(epoch + 1, n_epochs))
-        print('-' * 10)
         for phase in ['train', 'val']:
             if phase == 'train':
                 model.train()  # Set model to training mode
@@ -110,20 +102,13 @@ def main():
             n_total_steps = len(loader)
 
             for i, (img, gt) in enumerate(loader):
-                #  f, axarr = plt.subplots(1, 2)
-                #  axarr[0].imshow(img[0].permute(1, 2, 0))
-                #  axarr[1].imshow(gt[0].permute(1, 2, 0))
-                #  plt.show()
                 img = img.to(device)
                 gt = gt.to(device)
 
-                # forward
-                # track history if only in train
                 with torch.set_grad_enabled(phase == 'train'):
                     output = model(img)
                     loss = criterion(output, gt)
 
-                    # backward + optimize only if in training phase
                     if phase == 'train':
                         loss.backward()
                         optimizer.step()
@@ -132,33 +117,27 @@ def main():
                 running_loss += loss.item() * img.size(0)
                 running_corrects += torch.sum(output == gt.data)
                 running_total += gt.numel()
-                if phase == 'train':
-                    msg = f"Epoch: {epoch + 1}/{n_epochs}, step: {i + 1}/{n_total_steps}, loss: {loss.item():.4f}, acc: {running_corrects / running_total:.4f}"
-                    logger.info(msg)
-
-            # if phase == 'train':
-            #     scheduler.step()
-            #     print(
-            #         f"Epoch: {epoch + 1}/{n_epochs}, step: {i + 1}/{n_total_steps}, loss: {loss.item():.4f}"
-            #     )
 
             epoch_loss = running_loss / n_total_steps
             epoch_acc = running_corrects / running_total / n_total_steps
 
-            msg = f"{phase} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}"
+            msg = "Epoch: {}/{} \t {} \t Loss: {:.4f} Acc: {:.4f}".format(
+                epoch + 1, n_epochs, "Train" if phase == 'train' else "Val",
+                epoch_loss, epoch_acc)
             logger.info(msg)
 
             # deep copy the model
             if phase == 'val' and epoch_acc > best_acc:
                 best_acc = epoch_acc
-                best_model = copy.deepcopy(model.state_dict())
                 torch.save(model.state_dict(), './weights.pth')
+                msg = "Saved best model. Accuracy: {}".format(epoch_acc)
+                logger.info(msg)
             if phase == 'val':
                 val_acc_history.append(epoch_acc)
 
     print('Best val Acc: {:4f}'.format(best_acc))
 
-    model.load_state_dict(best_model)
+    model.load_state_dict(torch.load('./weights.pth'))
 
 
 if __name__ == "__main__":
