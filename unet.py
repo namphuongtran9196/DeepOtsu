@@ -143,10 +143,11 @@ class DeepOtsu(nn.Module):
         self.block = UNet(in_channels)
 
     def forward(self, x):
-        output = x
+        input = x
         for _ in range(self.num_block):
-            output = self.block(output)
-            output = torch.add(x, output)
+            output = self.block(input)
+            output = torch.add(input, output)
+            input = output
         return output
 
 
