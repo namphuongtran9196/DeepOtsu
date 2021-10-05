@@ -1,7 +1,8 @@
+from collections import OrderedDict
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from collections import OrderedDict
 
 
 class SeparableConv2d(nn.Module):
@@ -142,9 +143,11 @@ class DeepOtsu(nn.Module):
         self.block = UNet(in_channels)
 
     def forward(self, x):
+        output = x
         for _ in range(self.num_block):
-            x = self.block(x)
-        return x
+            output = self.block(output)
+            output = torch.add(x, output)
+        return output
 
 
 def crop_tensor(target_tensor, tensor):
@@ -173,6 +176,6 @@ def pad_tensor(target_tensor, tensor):
 if __name__ == "__main__":
     from torchinfo import summary
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = UNet(3, 2, False)
+    model = UNet(3)
     model.to(device)
     summary(model, (1, 3, 512, 512))
