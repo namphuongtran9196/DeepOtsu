@@ -73,8 +73,6 @@ class DIBCO(Dataset):
                 conversion_format = "RGB"
             image = image.convert(conversion_format)
         image = np.asarray(image)
-        #  image = np.expand_dims(np.transpose(image, (2, 0, 1)), axis=0)
-        image = Image.fromarray(image)
         if format == "BGR":
             # flip channels if needed
             image = image[:, :, ::-1]
