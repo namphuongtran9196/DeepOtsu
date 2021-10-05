@@ -1,4 +1,6 @@
 import copy
+import logging
+import pprint
 
 #  import matplotlib.pyplot as plt
 import numpy as np
@@ -10,12 +12,17 @@ from torch.utils.data.sampler import SubsetRandomSampler
 
 from criterion import HeScho
 from DIBCO import DIBCO
+from logger import setup_logger
 from transform import (Compose, Normalize, RandomCrop, RandomRotation,
                        RandomScale, ToTensor)
 from unet import DeepOtsu
 
 
 def main():
+
+    logger = logging.getLogger('segmentation')
+    if not logger.isEnabledFor(logging.INFO):  # setup_logger is not called
+        setup_logger()
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -48,14 +55,14 @@ def main():
         for x in ('train', 'val')
     }
 
-    model = DeepOtsu(3)
+    model = DeepOtsu(3, 4)
     model.to(device)
 
     criterion = HeScho()
 
-    n_epochs = 100
+    n_epochs = 1000
     lr = 0.01
-    batch_size = 1
+    batch_size = 4
     validation_split = .2
     shuffle_dataset = True
     random_seed = 42
@@ -78,12 +85,13 @@ def main():
                                    sampler=valid_sampler)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    scheduler = lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
+    scheduler = lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
     dataloaders = {'train': train_loader, 'val': validation_loader}
 
-    best_model = copy.deepcopy(model.state_dict())
     best_acc = 0.0
     val_acc_history = []
+
+    model.load_state_dict(torch.load('./weights.pth'))
 
     # Training loop
     for epoch in range(n_epochs):
@@ -97,6 +105,7 @@ def main():
 
             running_loss = 0.0
             running_corrects = 0
+            running_total = 0
 
             loader = dataloaders[phase]
             n_total_steps = len(loader)
@@ -119,27 +128,32 @@ def main():
                     if phase == 'train':
                         loss.backward()
                         optimizer.step()
+                        optimizer.zero_grad()
 
                 running_loss += loss.item() * img.size(0)
                 running_corrects += torch.sum(output == gt.data)
+                running_total += gt.numel()
+                if phase == 'train':
+                    msg = f"Epoch: {epoch + 1}/{n_epochs}, step: {i + 1}/{n_total_steps}, loss: {loss.item():.4f}, acc: {running_total/(i+1):.4f}"
+                    logger.info(msg)
 
-            if phase == 'train':
-                scheduler.step()
-
-                print(
-                    f"Epoch: {epoch + 1}/{n_epochs}, step: {i + 1}/{n_total_steps}, loss: {loss.item():.4f}"
-                )
+            # if phase == 'train':
+            #     scheduler.step()
+            #     print(
+            #         f"Epoch: {epoch + 1}/{n_epochs}, step: {i + 1}/{n_total_steps}, loss: {loss.item():.4f}"
+            #     )
 
             epoch_loss = running_loss / n_total_steps
-            epoch_acc = running_corrects.double() / n_total_steps
+            epoch_acc = running_total / n_total_steps
 
-            print('{} Loss: {:.4f} Acc: {:.4f}'.format(phase, epoch_loss,
-                                                       epoch_acc))
+            msg = f"{phase} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}"
+            logger.info(msg)
 
             # deep copy the model
             if phase == 'val' and epoch_acc > best_acc:
                 best_acc = epoch_acc
                 best_model = copy.deepcopy(model.state_dict())
+                torch.save(model.state_dict(), './weights.pth')
             if phase == 'val':
                 val_acc_history.append(epoch_acc)
 
