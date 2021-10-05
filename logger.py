@@ -41,7 +41,7 @@ def setup_logger(output=None,
                  distributed_rank=0,
                  *,
                  color=True,
-                 name="segmentation",
+                 name="Train",
                  abbrev_name=None):
     """
     Initialize the segmentation logger and set its verbosity level to "INFO".
@@ -62,7 +62,7 @@ def setup_logger(output=None,
     logger.propagate = False
 
     if abbrev_name is None:
-        abbrev_name = "seg" if name == "segmentation" else name
+        abbrev_name = "Train" if name == "Train" else name
 
     plain_formatter = logging.Formatter(
         "[%(asctime)s] %(name)s %(levelname)s: %(message)s",

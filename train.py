@@ -1,6 +1,5 @@
 import copy
 import logging
-import pprint
 
 #  import matplotlib.pyplot as plt
 import numpy as np
@@ -20,9 +19,9 @@ from unet import DeepOtsu
 
 def main():
 
-    logger = logging.getLogger('segmentation')
+    logger = logging.getLogger('Train')
     if not logger.isEnabledFor(logging.INFO):  # setup_logger is not called
-        setup_logger()
+        setup_logger("./log/log.txt")
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -84,8 +83,8 @@ def main():
                                    batch_size=batch_size,
                                    sampler=valid_sampler)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    scheduler = lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
+    optimizer = torch.optim.Adam(model.parameters())
+    #     scheduler = lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
     dataloaders = {'train': train_loader, 'val': validation_loader}
 
     best_acc = 0.0
@@ -134,7 +133,7 @@ def main():
                 running_corrects += torch.sum(output == gt.data)
                 running_total += gt.numel()
                 if phase == 'train':
-                    msg = f"Epoch: {epoch + 1}/{n_epochs}, step: {i + 1}/{n_total_steps}, loss: {loss.item():.4f}, acc: {running_total/(i+1):.4f}"
+                    msg = f"Epoch: {epoch + 1}/{n_epochs}, step: {i + 1}/{n_total_steps}, loss: {loss.item():.4f}, acc: {running_corrects / running_total:.4f}"
                     logger.info(msg)
 
             # if phase == 'train':
@@ -144,7 +143,7 @@ def main():
             #     )
 
             epoch_loss = running_loss / n_total_steps
-            epoch_acc = running_total / n_total_steps
+            epoch_acc = running_corrects / running_total / n_total_steps
 
             msg = f"{phase} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}"
             logger.info(msg)
