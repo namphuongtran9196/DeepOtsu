@@ -140,14 +140,19 @@ class DeepOtsu(nn.Module):
     def __init__(self, in_channels, num_block=3):
         super(DeepOtsu, self).__init__()
         self.num_block = num_block
-        self.block = UNet(in_channels)
+        blocks = []
+        for _ in range(num_block):
+            blocks.append(UNet(in_channels))
+        self.blocks = nn.Sequential(*blocks)
+        self.activation = nn.ReLU()
 
     def forward(self, x):
         input = x
         outputs = []
-        for _ in range(self.num_block):
-            output = self.block(input)
+        for block in self.blocks:
+            output = block(input)
             output = torch.add(input, output)
+            output = self.activation(output)
             outputs.append(output)
             input = output
         return outputs
