@@ -121,7 +121,7 @@ def main():
             epoch_loss = running_loss / n_total_steps
             epoch_acc = running_corrects / running_total / n_total_steps
 
-            msg = "Epoch: {}/{} \t {} \t Loss: {:.4f} Acc: {:.4f}".format(
+            msg = "Epoch: {}/{} \t {} \t Loss: {:.4f} Acc: {:.3e}".format(
                 epoch + 1, n_epochs, "Train" if phase == 'train' else "Val",
                 epoch_loss, epoch_acc)
             logger.info(msg)
@@ -130,7 +130,7 @@ def main():
             if phase == 'val' and epoch_acc > best_acc:
                 best_acc = epoch_acc
                 torch.save(model.state_dict(), './weights.pth')
-                msg = "Saved best model. Accuracy: {}".format(epoch_acc)
+                msg = "Saved best model. Accuracy: {:.3e}".format(epoch_acc)
                 logger.info(msg)
             if phase == 'val':
                 val_acc_history.append(epoch_acc)
