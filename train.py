@@ -1,5 +1,6 @@
 import logging
 
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
@@ -50,7 +51,13 @@ def main():
         for x in ('train', 'val')
     }
 
-    model = DeepOtsu(3, 4)
+    model = DeepOtsu(3, num_block=2)
+
+    try:
+        model.load_state_dict(torch.load('./weights.pth'))
+    except:
+        pass
+
     model.to(device)
 
     criterion = HeScho()
@@ -84,8 +91,6 @@ def main():
     best_acc = 0.0
     val_acc_history = []
 
-    model.load_state_dict(torch.load('./weights.pth'))
-
     # Training loop
     for epoch in range(n_epochs):
         for phase in ['train', 'val']:
@@ -115,7 +120,7 @@ def main():
                         optimizer.zero_grad()
 
                 running_loss += loss.item() * img.size(0)
-                running_corrects += torch.sum(output == gt.data)
+                running_corrects += torch.sum(output[-1] == gt.data)
                 running_total += gt.numel()
 
             epoch_loss = running_loss / n_total_steps

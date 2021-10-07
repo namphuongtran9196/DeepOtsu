@@ -122,16 +122,16 @@ class UNet(nn.Module):
         self.inc = DoubleConv(n_channels, 64)
         self.down1 = Down(64, 128)
         self.down2 = Down(128, 256 // factor)
-        self.up6 = Up(256, 128 // factor, bilinear)
-        self.up7 = Up(128, 64, bilinear)
+        self.up1 = Up(256, 128 // factor, bilinear)
+        self.up2 = Up(128, 64, bilinear)
         self.outc = OutConv(64, n_channels)
 
     def forward(self, x):
         x1 = self.inc(x)
         x2 = self.down1(x1)
         x3 = self.down2(x2)
-        x = self.up6(x3, x2)
-        x = self.up7(x, x1)
+        x = self.up1(x3, x2)
+        x = self.up2(x, x1)
         logits = self.outc(x)
         return logits
 
@@ -179,11 +179,3 @@ def pad_tensor(target_tensor, tensor):
     # https://github.com/HaiyongJiang/U-Net-Pytorch-Unstructured-Buggy/commit/0e854509c2cea854e247a9c615f175f76fbb2e3a
     # https://github.com/xiaopeng-liao/Pytorch-UNet/commit/8ebac70e633bac59fc22bb5195e513d5832fb3bd
     return tensor
-
-
-if __name__ == "__main__":
-    from torchinfo import summary
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = UNet(3)
-    model.to(device)
-    summary(model, (1, 3, 512, 512))
