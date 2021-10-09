@@ -32,7 +32,7 @@ def main():
                        True),
             RandomRotation(270),
             ToTensor(),
-            Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            Normalize([0.485], [0.229])
         ]),
         'val':
         Compose([
@@ -43,7 +43,7 @@ def main():
                        tuple([int(v * 255) for v in [0.485, 0.456, 0.406]]),
                        False),
             ToTensor(),
-            Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            Normalize([0.485], [0.229])
         ]),
     }
 
