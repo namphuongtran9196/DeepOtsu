@@ -129,6 +129,8 @@ class RandomScale(object):
                                         self.scale_step_size)
         # TODO: cv2 uses align_corner=False
         # TODO: use fvcore (https://github.com/facebookresearch/fvcore/blob/master/fvcore/transforms/transform.py#L377)
+        image = np.asarray(image)
+        groundtruth = np.asarray(groundtruth)
         image_dtype = image.dtype
         groundtruth_dtype = groundtruth.dtype
         image = cv2.resize(image.astype(np.float),
