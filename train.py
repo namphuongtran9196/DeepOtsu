@@ -1,16 +1,15 @@
 import logging
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 
-from criterion import HeScho
+from criterion import CrossEntropyLoss, HeScho
 from DIBCO import DIBCO
 from logger import setup_logger
-from transform import (Compose, Normalize, RandomCrop, RandomRotation,
-                       RandomScale, ToTensor)
+from transform import (Compose, Grayscale, Normalize, RandomCrop,
+                       RandomRotation, RandomScale, ToTensor)
 from unet import DeepOtsu
 
 
@@ -25,6 +24,7 @@ def main():
     data_transforms = {
         'train':
         Compose([
+            Grayscale(),
             RandomScale(.75, 1.5, .25),
             RandomCrop(256, 256,
                        tuple([int(v * 255) for v in [0.485, 0.456, 0.406]]),
@@ -36,6 +36,7 @@ def main():
         ]),
         'val':
         Compose([
+            Grayscale(),
             RandomScale(1, 1, 0),
             RandomCrop(256, 256,
                        tuple([int(v * 255) for v in [0.485, 0.456, 0.406]]),
@@ -51,19 +52,18 @@ def main():
         for x in ('train', 'val')
     }
 
-    model = DeepOtsu(3, num_block=2)
-
+    model = DeepOtsu(1, num_block=2)
     try:
         model.load_state_dict(torch.load('./weights.pth'))
     except:
         pass
-
     model.to(device)
 
-    criterion = HeScho()
+    criterion = CrossEntropyLoss()
+    #     criterion = HeScho()
 
     n_epochs = 1000
-    batch_size = 4
+    batch_size = 8
     validation_split = .2
     shuffle_dataset = True
     random_seed = 42
@@ -106,7 +106,7 @@ def main():
             loader = dataloaders[phase]
             n_total_steps = len(loader)
 
-            for i, (img, gt) in enumerate(loader):
+            for i, (img, gt, _) in enumerate(loader):
                 img = img.to(device)
                 gt = gt.to(device)
 
@@ -142,8 +142,8 @@ def main():
 
     print('Best val Acc: {:4f}'.format(best_acc))
 
-    model.load_state_dict(torch.load('./weights.pth'))
 
+#     model.load_state_dict(torch.load('./weights.pth'))
 
 if __name__ == "__main__":
     main()

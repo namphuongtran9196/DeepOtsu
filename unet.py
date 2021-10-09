@@ -179,3 +179,11 @@ def pad_tensor(target_tensor, tensor):
     # https://github.com/HaiyongJiang/U-Net-Pytorch-Unstructured-Buggy/commit/0e854509c2cea854e247a9c615f175f76fbb2e3a
     # https://github.com/xiaopeng-liao/Pytorch-UNet/commit/8ebac70e633bac59fc22bb5195e513d5832fb3bd
     return tensor
+
+
+if __name__ == "__main__":
+    from torchinfo import summary
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = UNet(3)
+    model.to(device)
+    summary(model, (1, 3, 512, 512))

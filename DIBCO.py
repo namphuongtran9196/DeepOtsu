@@ -20,7 +20,7 @@ class DIBCO(Dataset):
         self.data_list = self._get_files('data')
         self.target_list = self._get_files('target')
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> Tuple[Any, Any, Any]:
         """
         Args:
             index (int): Index
@@ -39,7 +39,7 @@ class DIBCO(Dataset):
         #  dataset_dict['img'] = img
         #  dataset_dict['gt'] = gt
 
-        return img, gt
+        return img, gt, self.target_list[index]
 
     def __len__(self) -> int:
         return len(self.data_list)

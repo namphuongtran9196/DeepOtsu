@@ -403,18 +403,77 @@ class Resize(torch.nn.Module):
         self.interpolation = interpolation
         self.antialias = antialias
 
-    def forward(self, img):
+    def forward(self, img, gt):
         """
         Args:
-            img (PIL Image or Tensor): Image to be scaled.
+            img (array): Image to be scaled.
 
         Returns:
             PIL Image or Tensor: Rescaled image.
         """
-        return F.resize(img, self.size, self.interpolation, self.max_size,
-                        self.antialias)
+        img = Image.fromarray(img)
+        gt = Image.fromarray(gt)
+        desired_size = self.size
+
+        old_size = img.size  # old_size[0] is in (width, height) format
+
+        ratio = float(desired_size) / max(old_size)
+        new_size = tuple([int(x * ratio) for x in old_size])
+        img = img.resize(new_size, Image.ANTIALIAS)
+        gt = gt.resize(new_size, Image.ANTIALIAS)
+
+        # create a new image and paste the resized on it
+        new_img, new_gt = Image.new("RGB",
+                                    (desired_size, desired_size)), Image.new(
+                                        "RGB", (desired_size, desired_size))
+        new_img.paste(img, ((desired_size - new_size[0]) // 2,
+                            (desired_size - new_size[1]) // 2))
+        new_gt.paste(gt, ((desired_size - new_size[0]) // 2,
+                          (desired_size - new_size[1]) // 2))
+
+        return new_img, new_gt
 
     def __repr__(self):
         interpolate_str = self.interpolation.value
         return self.__class__.__name__ + '(size={0}, interpolation={1}, max_size={2}, antialias={3})'.format(
             self.size, interpolate_str, self.max_size, self.antialias)
+
+
+class Grayscale(torch.nn.Module):
+    """Convert image to grayscale.
+    If the image is torch Tensor, it is expected
+    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions
+
+    Args:
+        num_output_channels (int): (1 or 3) number of channels desired for output image
+
+    Returns:
+        PIL Image: Grayscale version of the input.
+
+        - If ``num_output_channels == 1`` : returned image is single channel
+        - If ``num_output_channels == 3`` : returned image is 3 channel with r == g == b
+
+    """
+    def __init__(self, num_output_channels=1):
+        super().__init__()
+        self.num_output_channels = num_output_channels
+
+    def forward(self, img, gt):
+        """
+        Args:
+            img (PIL Image or Tensor): Image to be converted to grayscale.
+
+        Returns:
+            PIL Image or Tensor: Grayscaled image.
+        """
+        img = F.rgb_to_grayscale(img,
+                                 num_output_channels=self.num_output_channels)
+        gt = F.rgb_to_grayscale(gt,
+                                num_output_channels=self.num_output_channels)
+        return img, gt
+
+    def __repr__(self):
+
+        return self.__class__.__name__ + '(num_output_channels={0})'.format(
+
+            self.num_output_channels)
