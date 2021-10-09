@@ -411,8 +411,6 @@ class Resize(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Rescaled image.
         """
-        img = Image.fromarray(img)
-        gt = Image.fromarray(gt)
         desired_size = self.size
 
         old_size = img.size  # old_size[0] is in (width, height) format
@@ -475,5 +473,4 @@ class Grayscale(torch.nn.Module):
     def __repr__(self):
 
         return self.__class__.__name__ + '(num_output_channels={0})'.format(
-
             self.num_output_channels)

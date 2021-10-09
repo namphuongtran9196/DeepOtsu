@@ -33,7 +33,9 @@ class DIBCO(Dataset):
 
         # Apply data augmentation.
         if self.transform is not None:
-            img, gt = self.transform(np.asarray(img), np.asarray(gt))
+            img = Image.fromarray(img)
+            gt = Image.fromarray(gt)
+            img, gt = self.transform(img, gt)
 
         #  dataset_dict = {}
         #  dataset_dict['img'] = img
