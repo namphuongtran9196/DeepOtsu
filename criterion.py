@@ -1,9 +1,5 @@
-from typing import List, Optional
-
 import torch
-from torch import Tensor, nn
-from torch.nn import _reduction as _Reduction
-from torch.nn import functional as F
+from torch import nn
 
 
 class HeScho(nn.Module):

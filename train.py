@@ -8,12 +8,12 @@ from torch.utils.data.sampler import SubsetRandomSampler
 from torchinfo import summary
 from torchmetrics.functional import accuracy, f1, psnr
 
-from criterion import CrossEntropyLoss, HeScho
-from DIBCO import DIBCO
+from criterion import HeScho
+from dataset import DIBCO
+from deepotsu import DeepOtsu
 from logger import setup_logger
 from transform import (Compose, Grayscale, Normalize, RandomCrop, RandomInvert,
                        RandomRotation, RandomScale, ToTensor)
-from unet import DeepOtsu
 
 
 def main():
