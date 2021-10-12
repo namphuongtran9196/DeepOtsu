@@ -125,26 +125,32 @@ class UNet(nn.Module):
         self.up1 = Up(256, 128 // factor, bilinear)
         self.up2 = Up(128, 64, bilinear)
         self.outc = OutConv(64, n_channels)
+        self.dropout = nn.Dropout(0.1)
 
     def forward(self, x):
         x1 = self.inc(x)
         x2 = self.down1(x1)
+        x2 = self.dropout(x2)
         x3 = self.down2(x2)
         x = self.up1(x3, x2)
+        x = self.dropout(x)
         x = self.up2(x, x1)
+        x = self.dropout(x)
         logits = self.outc(x)
         return logits
 
 
 class DeepOtsu(nn.Module):
-    def __init__(self, in_channels, num_block=3):
+    def __init__(self, in_channels, num_block=2, istrain=True):
         super(DeepOtsu, self).__init__()
         self.num_block = num_block
         blocks = []
         for _ in range(num_block):
             blocks.append(UNet(in_channels))
         self.blocks = nn.Sequential(*blocks)
-        self.activation = nn.ReLU()
+        self.activation = nn.Sigmoid()
+        self.conv = nn.Conv2d(1, 2, 1)
+        self.istrain = istrain
 
     def forward(self, x):
         input = x
@@ -155,7 +161,8 @@ class DeepOtsu(nn.Module):
             output = self.activation(output)
             outputs.append(output)
             input = output
-        return outputs
+
+            return outputs
 
 
 def crop_tensor(target_tensor, tensor):
@@ -179,11 +186,3 @@ def pad_tensor(target_tensor, tensor):
     # https://github.com/HaiyongJiang/U-Net-Pytorch-Unstructured-Buggy/commit/0e854509c2cea854e247a9c615f175f76fbb2e3a
     # https://github.com/xiaopeng-liao/Pytorch-UNet/commit/8ebac70e633bac59fc22bb5195e513d5832fb3bd
     return tensor
-
-
-if __name__ == "__main__":
-    from torchinfo import summary
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = UNet(3)
-    model.to(device)
-    summary(model, (1, 3, 512, 512))

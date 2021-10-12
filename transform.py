@@ -476,3 +476,29 @@ class Grayscale(torch.nn.Module):
 
         return self.__class__.__name__ + '(num_output_channels={0})'.format(
             self.num_output_channels)
+
+
+class RandomInvert(torch.nn.Module):
+    """Inverts the colors of the given image randomly with a given probability.
+    If img is a Tensor, it is expected to be in [..., 1 or 3, H, W] format,
+    where ... means it can have an arbitrary number of leading dimensions.
+    If img is PIL Image, it is expected to be in mode "L" or "RGB".
+
+    Args:
+        p (float): probability of the image being color inverted. Default value is 0.5
+    """
+    def __init__(self, p=0.5):
+        super().__init__()
+        self.p = p
+
+    def forward(self, img, gt):
+        """
+        Args:
+            img (PIL Image or Tensor): Image to be inverted.
+
+        Returns:
+            PIL Image or Tensor: Randomly color inverted image.
+        """
+        if torch.rand(1).item() < self.p:
+            return F.invert(img), F.invert(gt)
+        return img

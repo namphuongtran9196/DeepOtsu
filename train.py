@@ -2,13 +2,16 @@ import logging
 
 import numpy as np
 import torch
+import torchvision
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
+from torchinfo import summary
+from torchmetrics.functional import accuracy, f1, psnr
 
 from criterion import CrossEntropyLoss, HeScho
 from DIBCO import DIBCO
 from logger import setup_logger
-from transform import (Compose, Grayscale, Normalize, RandomCrop,
+from transform import (Compose, Grayscale, Normalize, RandomCrop, RandomInvert,
                        RandomRotation, RandomScale, ToTensor)
 from unet import DeepOtsu
 
@@ -25,6 +28,7 @@ def main():
         'train':
         Compose([
             Grayscale(),
+            RandomInvert(1),
             RandomScale(.75, 1.5, .25),
             RandomCrop(256, 256,
                        tuple([int(v * 255) for v in [0.485, 0.456, 0.406]]),
@@ -32,18 +36,17 @@ def main():
                        True),
             RandomRotation(270),
             ToTensor(),
-            Normalize([0.485], [0.229])
         ]),
         'val':
         Compose([
             Grayscale(),
+            RandomInvert(1),
             RandomScale(1, 1, 0),
             RandomCrop(256, 256,
                        tuple([int(v * 255) for v in [0.485, 0.456, 0.406]]),
                        tuple([int(v * 255) for v in [0.485, 0.456, 0.406]]),
                        False),
             ToTensor(),
-            Normalize([0.485], [0.229])
         ]),
     }
 
@@ -58,12 +61,12 @@ def main():
     except:
         pass
     model.to(device)
+    summary(model, (1, 1, 256, 256))
 
-    criterion = CrossEntropyLoss()
-    #     criterion = HeScho()
+    criterion = HeScho()
 
     n_epochs = 1000
-    batch_size = 8
+    batch_size = 4
     validation_split = .2
     shuffle_dataset = True
     random_seed = 42
@@ -89,7 +92,8 @@ def main():
     dataloaders = {'train': train_loader, 'val': validation_loader}
 
     best_acc = 0.0
-    val_acc_history = []
+    best_f1 = 0.0
+    best_psnr = 0.0
 
     # Training loop
     for epoch in range(n_epochs):
@@ -100,13 +104,14 @@ def main():
                 model.eval()  # Set model to evaluate mode
 
             running_loss = 0.0
-            running_corrects = 0
-            running_total = 0
+            f1_score = 0.0
+            psnr_score = 0.0
+            acc_score = 0.0
 
             loader = dataloaders[phase]
             n_total_steps = len(loader)
 
-            for i, (img, gt, _) in enumerate(loader):
+            for i, (img, gt, fnames) in enumerate(loader):
                 img = img.to(device)
                 gt = gt.to(device)
 
@@ -120,30 +125,35 @@ def main():
                         optimizer.zero_grad()
 
                 running_loss += loss.item() * img.size(0)
-                running_corrects += torch.sum(output[-1] == gt.data)
-                running_total += gt.numel()
+                f1_score += f1(output[-1], gt.data.type(torch.uint8))
+                acc_score += accuracy(output[-1], gt.data.type(torch.uint8))
+                psnr_score += psnr(output[-1], gt.data)
+
+                if (epoch + 1) % 10 == 0:
+                    out = output[-1][0]
+                    fname = fnames[0].split('/')[-1].split(".")[0]
+                    fname = '/'.join(("./log/debug_imgs", fname + ".jpg"))
+                    torchvision.utils.save_image(out, fname)
 
             epoch_loss = running_loss / n_total_steps
-            epoch_acc = running_corrects / running_total / n_total_steps
+            epoch_acc = acc_score / n_total_steps
+            epoch_f1 = f1_score / n_total_steps
+            epoch_psnr = psnr_score / n_total_steps
 
-            msg = "Epoch: {}/{} \t {} \t Loss: {:.4f} Acc: {:.3e}".format(
+            msg = "Epoch: {}/{} \t {} \t Loss: {:.4f} F1: {:.4f} Acc: {:.4f}, PSNR: {:.4f}".format(
                 epoch + 1, n_epochs, "Train" if phase == 'train' else "Val",
-                epoch_loss, epoch_acc)
+                epoch_loss, epoch_f1, epoch_acc, epoch_psnr)
             logger.info(msg)
 
             # deep copy the model
-            if phase == 'val' and epoch_acc > best_acc:
-                best_acc = epoch_acc
+            if phase == 'val' and epoch_f1 > best_f1:
+                best_f1 = epoch_f1
                 torch.save(model.state_dict(), './weights.pth')
-                msg = "Saved best model. Accuracy: {:.3e}".format(epoch_acc)
+                msg = "Saved best model. F1 Score: {:.4f}".format(epoch_f1)
                 logger.info(msg)
-            if phase == 'val':
-                val_acc_history.append(epoch_acc)
 
-    print('Best val Acc: {:4f}'.format(best_acc))
+    print('Best val F1 Score: {:.4f}'.format(best_f1))
 
-
-#     model.load_state_dict(torch.load('./weights.pth'))
 
 if __name__ == "__main__":
     main()

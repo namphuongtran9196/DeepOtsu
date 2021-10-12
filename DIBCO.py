@@ -37,10 +37,6 @@ class DIBCO(Dataset):
             gt = Image.fromarray(gt)
             img, gt = self.transform(img, gt)
 
-        #  dataset_dict = {}
-        #  dataset_dict['img'] = img
-        #  dataset_dict['gt'] = gt
-
         return img, gt, self.target_list[index]
 
     def __len__(self) -> int:
